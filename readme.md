@@ -1,6 +1,7 @@
 # Git Sparse-Checkout 仓库下载脚本
 
-这个脚本用于从 GitHub 仓库下载指定的目录，使用 `git sparse-checkout` 技术只下载需要的目录内容，而不是整个仓库。
+这个脚本用于从 GitHub 仓库下载指定的目录，我用来下载开发文档，给各类AI工具使用。
+使用 `git sparse-checkout` 技术只下载需要的目录内容，而不是整个仓库。
 
 ## 功能特性
 
