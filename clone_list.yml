@@ -1,0 +1,29 @@
+# 仓库配置列表
+repositories:
+  - name: dspy
+    url: https://github.com/stanfordnlp/dspy/tree/main/docs/docs
+    description: DSPy 框架文档
+
+  - name: ten-framework
+    url: https://github.com/TEN-framework/portal/tree/main/content/docs
+    description: TEN 框架文档
+
+  - name: langchain
+    url: https://github.com/langchain-ai/docs/tree/main/src/oss/langchain
+    description: LangChain 文档
+
+  - name: langgraph
+    url: https://github.com/langchain-ai/docs/tree/main/src/oss/langgraph
+    description: LangGraph 文档
+
+  - name: langsmith
+    url: https://github.com/langchain-ai/docs/tree/main/src/langsmith
+    description: langsmith 文档，包含 langsmith studio
+
+  - name: copilotkit
+    url: https://github.com/CopilotKit/CopilotKit/tree/main/docs/content/docs
+    description: CopilotKit 文档
+
+
+
+
