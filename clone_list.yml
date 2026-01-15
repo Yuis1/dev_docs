@@ -16,6 +16,10 @@ repositories:
     url: https://github.com/langchain-ai/docs/tree/main/src/oss/langgraph
     description: LangGraph 文档
 
+  - name: deep_agents
+    url: https://github.com/langchain-ai/docs/tree/main/src/oss/deepagents
+    description: Deep Agents 文档
+
   - name: langsmith
     url: https://github.com/langchain-ai/docs/tree/main/src/langsmith
     description: langsmith 文档，包含 langsmith studio

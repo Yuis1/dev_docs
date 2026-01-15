@@ -1,0 +1,45 @@
+创建语音转文本请求
+Creates an audio transcription.
+
+POST
+/audio/transcriptions
+
+curl --request POST \
+  --url https://api.siliconflow.cn/v1/audio/transcriptions \
+  --header 'Authorization: Bearer <token>' \
+  --header 'Content-Type: multipart/form-data' \
+  --form model=FunAudioLLM/SenseVoiceSmall \
+  --form file=@example-file
+
+200
+{
+  "text": "<string>"
+}
+
+
+Authorizations
+​string header required
+Use the following format for authentication: Bearer <your api key>
+
+Body
+multipart/form-data
+​
+file
+file required
+The audio file object (not file name) to transcribe
+
+​
+model
+enum<string>  required
+Corresponding Model Name. To better enhance service quality, we will make periodic changes to the models provided by this service, including but not limited to model on/offlining and adjustments to model service capabilities. We will notify you of such changes through appropriate means such as announcements or message pushes where feasible.
+
+Available options: FunAudioLLM/SenseVoiceSmall 
+Example:"FunAudioLLM/SenseVoiceSmall"
+
+Response
+200
+Represents a transcription response returned by model, based on the provided input.
+
+text
+string required
+The transcribed text.

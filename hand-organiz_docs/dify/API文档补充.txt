@@ -1,0 +1,299 @@
+/chat-messages
+Send Chat Message
+Send a request to the chat application.
+
+Request Body
+Name
+query
+Type
+string
+Description
+User Input/Question content
+
+Name
+inputs
+Type
+object
+Description
+Allows the entry of various variable values defined by the App. The inputs parameter contains multiple key/value pairs, with each key corresponding to a specific variable and each value being the specific value for that variable. If the variable is of file type, specify an object that has the keys described in files below. Default {}
+
+Name
+response_mode
+Type
+string
+Description
+The mode of response return, supporting:
+
+streaming Streaming mode (recommended), implements a typewriter-like output through SSE (Server-Sent Events).
+blocking Blocking mode, returns result after execution is complete. (Requests may be interrupted if the process is long) Due to Cloudflare restrictions, the request will be interrupted without a return after 100 seconds.
+Name
+user
+Type
+string
+Description
+User identifier, used to define the identity of the end-user for retrieval and statistics. Should be uniquely defined by the developer within the application. The Service API does not share conversations created by the WebApp.
+
+Name
+conversation_id
+Type
+string
+Description
+Conversation ID, to continue the conversation based on previous chat records, it is necessary to pass the previous message's conversation_id.
+
+Name
+files
+Type
+array[object]
+Description
+File list, suitable for inputting files combined with text understanding and answering questions, available only when the model supports Vision capability.
+
+type (string) Supported type:
+document ('TXT', 'MD', 'MARKDOWN', 'PDF', 'HTML', 'XLSX', 'XLS', 'DOCX', 'CSV', 'EML', 'MSG', 'PPTX', 'PPT', 'XML', 'EPUB')
+image ('JPG', 'JPEG', 'PNG', 'GIF', 'WEBP', 'SVG')
+audio ('MP3', 'M4A', 'WAV', 'WEBM', 'AMR')
+video ('MP4', 'MOV', 'MPEG', 'MPGA')
+custom (Other file types)
+transfer_method (string) Transfer method, remote_url for image URL / local_file for file upload
+url (string) Image URL (when the transfer method is remote_url)
+upload_file_id (string) Uploaded file ID, which must be obtained by uploading through the File Upload API in advance (when the transfer method is local_file)
+
+Name
+auto_generate_name
+Type
+bool
+Description
+Auto-generate title, default is true. If set to false, can achieve async title generation by calling the conversation rename API and setting auto_generate to true.
+
+Name
+trace_id
+Type
+string
+Description
+(Optional) Trace ID. Used for integration with existing business trace components to achieve end-to-end distributed tracing. If not provided, the system will automatically generate a trace_id. Supports the following three ways to pass, in order of priority:
+
+Header: via HTTP Header X-Trace-Id, highest priority.
+Query parameter: via URL query parameter trace_id.
+Request Body: via request body field trace_id (i.e., this field).
+Response
+When response_mode is blocking, return a CompletionResponse object. When response_mode is streaming, return a ChunkCompletionResponse stream.
+
+
+---
+
+ChatCompletionResponse
+Returns the complete App result, Content-Type is application/json.
+
+event (string) Event type, fixed to message
+task_id (string) Task ID, used for request tracking and the below Stop Generate API
+id (string) unique ID
+message_id (string) Unique message ID
+conversation_id (string) Conversation ID
+mode (string) App mode, fixed as chat
+answer (string) Complete response content
+metadata (object) Metadata
+usage (Usage) Model usage information
+retriever_resources (array[RetrieverResource]) Citation and Attribution List
+created_at (int) Message creation timestamp, e.g., 1705395332
+ChunkChatCompletionResponse
+Returns the stream chunks outputted by the App, Content-Type is text/event-stream. Each streaming chunk starts with data:, separated by two newline characters \n\n, as shown below:
+
+data: {"event": "message", "task_id": "900bbd43-dc0b-4383-a372-aa6e6c414227", "id": "663c5084-a254-4040-8ad3-51f2a3c1a77c", "answer": "Hi", "created_at": 1705398420}\n\n
+
+
+The structure of the streaming chunks varies depending on the event:
+
+event: message LLM returns text chunk event, i.e., the complete text is output in a chunked fashion.
+task_id (string) Task ID, used for request tracking and the below Stop Generate API
+message_id (string) Unique message ID
+conversation_id (string) Conversation ID
+answer (string) LLM returned text chunk content
+created_at (int) Creation timestamp, e.g., 1705395332
+event: message_file Message file event, a new file has created by tool
+id (string) File unique ID
+type (string) File type，only allow "image" currently
+belongs_to (string) Belongs to, it will only be an 'assistant' here
+url (string) Remote url of file
+conversation_id (string) Conversation ID
+event: message_end Message end event, receiving this event means streaming has ended.
+task_id (string) Task ID, used for request tracking and the below Stop Generate API
+message_id (string) Unique message ID
+conversation_id (string) Conversation ID
+metadata (object) Metadata
+usage (Usage) Model usage information
+retriever_resources (array[RetrieverResource]) Citation and Attribution List
+event: tts_message TTS audio stream event, that is, speech synthesis output. The content is an audio block in Mp3 format, encoded as a base64 string. When playing, simply decode the base64 and feed it into the player. (This message is available only when auto-play is enabled)
+task_id (string) Task ID, used for request tracking and the stop response interface below
+message_id (string) Unique message ID
+audio (string) The audio after speech synthesis, encoded in base64 text content, when playing, simply decode the base64 and feed it into the player
+created_at (int) Creation timestamp, e.g.: 1705395332
+event: tts_message_end TTS audio stream end event, receiving this event indicates the end of the audio stream.
+task_id (string) Task ID, used for request tracking and the stop response interface below
+message_id (string) Unique message ID
+audio (string) The end event has no audio, so this is an empty string
+created_at (int) Creation timestamp, e.g.: 1705395332
+event: message_replace Message content replacement event. When output content moderation is enabled, if the content is flagged, then the message content will be replaced with a preset reply through this event.
+task_id (string) Task ID, used for request tracking and the below Stop Generate API
+message_id (string) Unique message ID
+conversation_id (string) Conversation ID
+answer (string) Replacement content (directly replaces all LLM reply text)
+created_at (int) Creation timestamp, e.g., 1705395332
+event: workflow_started workflow starts execution
+task_id (string) Task ID, used for request tracking and the below Stop Generate API
+workflow_run_id (string) Unique ID of workflow execution
+event (string) fixed to workflow_started
+data (object) detail
+id (string) Unique ID of workflow execution
+workflow_id (string) ID of related workflow
+created_at (timestamp) Creation timestamp, e.g., 1705395332
+event: node_started node execution started
+task_id (string) Task ID, used for request tracking and the below Stop Generate API
+workflow_run_id (string) Unique ID of workflow execution
+event (string) fixed to node_started
+data (object) detail
+id (string) Unique ID of workflow execution
+node_id (string) ID of node
+node_type (string) type of node
+title (string) name of node
+index (int) Execution sequence number, used to display Tracing Node sequence
+predecessor_node_id (string) optional Prefix node ID, used for canvas display execution path
+inputs (object) Contents of all preceding node variables used in the node
+created_at (timestamp) timestamp of start, e.g., 1705395332
+event: node_finished node execution ends, success or failure in different states in the same event
+task_id (string) Task ID, used for request tracking and the below Stop Generate API
+workflow_run_id (string) Unique ID of workflow execution
+event (string) fixed to node_finished
+data (object) detail
+id (string) Unique ID of workflow execution
+node_id (string) ID of node
+node_type (string) type of node
+title (string) name of node
+index (int) Execution sequence number, used to display Tracing Node sequence
+predecessor_node_id (string) optional Prefix node ID, used for canvas display execution path
+inputs (object) Contents of all preceding node variables used in the node
+process_data (json) Optional node process data
+outputs (json) Optional content of output
+status (string) status of execution, running / succeeded / failed / stopped
+error (string) Optional reason of error
+elapsed_time (float) Optional total seconds to be used
+execution_metadata (json) meta data
+total_tokens (int) optional tokens to be used
+total_price (decimal) optional Total cost
+currency (string) optional e.g. USD / RMB
+created_at (timestamp) timestamp of start, e.g., 1705395332
+event: workflow_finished workflow execution ends, success or failure in different states in the same event
+task_id (string) Task ID, used for request tracking and the below Stop Generate API
+workflow_run_id (string) Unique ID of workflow execution
+event (string) fixed to workflow_finished
+data (object) detail
+id (string) ID of workflow execution
+workflow_id (string) ID of related workflow
+status (string) status of execution, running / succeeded / failed / stopped
+outputs (json) Optional content of output
+error (string) Optional reason of error
+elapsed_time (float) Optional total seconds to be used
+total_tokens (int) Optional tokens to be used
+total_steps (int) default 0
+created_at (timestamp) start time
+finished_at (timestamp) end time
+event: error Exceptions that occur during the streaming process will be output in the form of stream events, and reception of an error event will end the stream.
+task_id (string) Task ID, used for request tracking and the below Stop Generate API
+message_id (string) Unique message ID
+status (int) HTTP status code
+code (string) Error code
+message (string) Error message
+event: ping Ping event every 10 seconds to keep the connection alive.
+Errors
+404, Conversation does not exists
+400, invalid_param, abnormal parameter input
+400, app_unavailable, App configuration unavailable
+400, provider_not_initialize, no available model credential configuration
+400, provider_quota_exceeded, model invocation quota insufficient
+400, model_currently_not_support, current model unavailable
+400, completion_request_error, text generation failed
+500, internal server error
+
+---
+
+POST
+/audio-to-text
+Speech to Text
+This endpoint requires a multipart/form-data request.
+
+Request Body
+Name
+file
+Type
+file
+Description
+Audio file. Supported formats: ['mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'wav', 'webm'] File size limit: 15MB
+
+Name
+user
+Type
+string
+Description
+User identifier, defined by the developer's rules, must be unique within the application.
+
+Response
+text (string) Output text
+Request
+
+---
+
+POST
+/audio-to-text
+curl -X POST 'http://192.168.3.239/v1/audio-to-text' \
+--header 'Authorization: Bearer {api_key}' \
+--form 'file=@localfile;type=audio/[mp3|mp4|mpeg|mpga|m4a|wav|webm]'
+
+
+Response
+{
+  "text": ""
+}
+
+---
+
+POST
+/text-to-audio
+Text to Audio
+Text to speech.
+
+Request Body
+Name
+message_id
+Type
+str
+Description
+For text messages generated by Dify, simply pass the generated message-id directly. The backend will use the message-id to look up the corresponding content and synthesize the voice information directly. If both message_id and text are provided simultaneously, the message_id is given priority.
+
+Name
+text
+Type
+str
+Description
+Speech generated content。
+
+Name
+user
+Type
+string
+Description
+The user identifier, defined by the developer, must ensure uniqueness within the app.
+
+Request
+POST
+/text-to-audio
+curl -o text-to-audio.mp3 -X POST 'http://192.168.3.239/v1/text-to-audio' \
+--header 'Authorization: Bearer {api_key}' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "message_id": "5ad4cb98-f0c7-4085-b384-88c403be6290",
+    "text": "Hello Dify",
+    "user": "abc-123"
+}'
+
+headers
+{
+  "Content-Type": "audio/wav"
+}
