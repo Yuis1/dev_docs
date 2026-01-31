@@ -9,6 +9,7 @@ import sys
 import subprocess
 import json
 import argparse
+import yaml
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, Optional, Tuple, List
@@ -128,51 +129,10 @@ def get_remote_latest_commit(repo_url: str, branch: str = "main") -> Optional[st
         return None
 
 def check_local_repo_status(repo_dir: Path) -> Dict:
-    """检查本地仓库状态"""
+    """检查本地目录状态"""
     status = {
-        "exists": repo_dir.exists(),
-        "is_git_repo": False,
-        "current_commit": None,
-        "file_count": 0,
-        "last_modified": None
+        "exists": repo_dir.exists()
     }
-
-    if not status["exists"]:
-        return status
-
-    try:
-        # 检查是否是git仓库
-        git_dir = repo_dir / ".git"
-        status["is_git_repo"] = git_dir.exists()
-
-        if status["is_git_repo"]:
-            # 获取当前提交
-            success, stdout, stderr = run_command(
-                ["git", "rev-parse", "HEAD"],
-                cwd=repo_dir,
-                capture_output=True
-            )
-            if success:
-                status["current_commit"] = stdout
-
-            # 统计文件数量
-            success, stdout, stderr = run_command(
-                ["git", "ls-files"],
-                cwd=repo_dir,
-                capture_output=True
-            )
-            if success:
-                status["file_count"] = len(stdout.split('\n')) if stdout else 0
-
-        # 获取最后修改时间
-        if repo_dir.exists():
-            status["last_modified"] = datetime.fromtimestamp(
-                repo_dir.stat().st_mtime
-            ).isoformat()
-
-    except Exception as e:
-        print(f"  检查本地状态异常: {e}")
-
     return status
 
 def main():
@@ -197,39 +157,19 @@ def main():
     print(f"工作目录: {base_dir}")
     print(f"文档目录: {docs_dir}")
 
-    # 仓库配置
-    repos = [
-        {
-            "name": "dspy",
-            "url": "https://github.com/stanfordnlp/dspy/tree/main/docs/docs",
-            "description": "DSPy 框架文档"
-        },
-        {
-            "name": "ten-framework",
-            "url": "https://github.com/TEN-framework/portal/tree/main/content/docs",
-            "description": "TEN 框架文档"
-        },
-        {
-            "name": "langchain",
-            "url": "https://github.com/langchain-ai/docs/tree/main/src/oss/langchain",
-            "description": "LangChain 文档"
-        },
-        {
-            "name": "langgraph",
-            "url": "https://github.com/langchain-ai/docs/tree/main/src/oss/langgraph",
-            "description": "LangGraph 文档"
-        },
-        {
-            "name": "langsmith",
-            "url": "https://github.com/langchain-ai/docs/tree/main/src/langsmith",
-            "description": "LangSmith 文档"
-        },
-        {
-            "name": "copilotkit",
-            "url": "https://github.com/CopilotKit/CopilotKit/tree/main/docs/content/docs",
-            "description": "CopilotKit 文档"
-        }
-    ]
+    # 从 clone_list.yml 读取仓库配置
+    clone_list_file = base_dir / "clone_list.yml"
+    if not clone_list_file.exists():
+        print(f"错误: 配置文件不存在: {clone_list_file}")
+        return False
+
+    try:
+        with open(clone_list_file, 'r', encoding='utf-8') as f:
+            config = yaml.safe_load(f)
+            repos = config.get("repositories", [])
+    except Exception as e:
+        print(f"错误: 无法读取配置文件: {e}")
+        return False
 
     # 过滤指定仓库
     if args.repo:
@@ -263,9 +203,10 @@ def main():
         local_status = check_local_repo_status(repo_dir)
         repo_status = status_manager.get_repo_status(name)
 
-        print(f"  本地状态: 存在={local_status['exists']}, Git仓库={local_status['is_git_repo']}")
-        if local_status['current_commit']:
-            print(f"  当前提交: {local_status['current_commit'][:8]}")
+        print(f"  本地状态: 存在={local_status['exists']}")
+        last_commit = repo_status.get("last_commit")
+        if last_commit:
+            print(f"  上次提交: {last_commit[:8]}")
 
         # 获取远程最新提交
         remote_commit = get_remote_latest_commit(base_url, branch)
@@ -275,25 +216,22 @@ def main():
             print(f"  ⚠ 无法获取远程提交信息")
 
         # 判断是否需要更新
-        needs_update = False
-        update_reason = ""
-
         if args.force:
-            needs_update = True
             update_reason = "强制更新"
         elif not local_status["exists"]:
-            needs_update = True
             update_reason = "首次下载"
-        elif not local_status["is_git_repo"]:
-            needs_update = True
-            update_reason = "非Git仓库，重新下载"
-        elif remote_commit and remote_commit != local_status["current_commit"]:
-            needs_update = True
-            update_reason = f"有更新 ({local_status['current_commit'][:8]} -> {remote_commit[:8]})"
         else:
-            print(f"  ✓ 已是最新，跳过")
-            results["skipped"] += 1
-            continue
+            # 从状态文件获取上次记录的commit，与远程commit比较
+            last_commit = repo_status.get("last_commit")
+            if remote_commit and remote_commit != last_commit:
+                if last_commit:
+                    update_reason = f"有更新 ({last_commit[:8]} -> {remote_commit[:8]})"
+                else:
+                    update_reason = "首次下载"
+            else:
+                print(f"  ✓ 已是最新，跳过")
+                results["skipped"] += 1
+                continue
 
         if args.check:
             print(f"  需要更新: {update_reason}")
@@ -302,60 +240,53 @@ def main():
         print(f"  需要更新: {update_reason}")
 
         try:
-            # 如果存在且不是git仓库，删除重建
-            if local_status["exists"] and not local_status["is_git_repo"]:
-                print(f"  删除非git目录...")
+            # 删除旧目录（sparse-checkout 移动的目录没有 git 信息，无法增量更新）
+            if local_status["exists"]:
+                print(f"  删除旧目录...")
                 import shutil
                 shutil.rmtree(repo_dir)
 
-            if local_status["exists"] and local_status["is_git_repo"]:
-                # 更新现有仓库
-                print(f"  拉取最新内容...")
-                success, error = run_command(["git", "pull", "origin", branch], cwd=repo_dir)
-                if not success:
-                    raise Exception(f"拉取失败: {error}")
-            else:
-                # 创建临时目录用于sparse-checkout
-                temp_dir = docs_dir / f"temp_{name}_{int(datetime.now().timestamp())}"
-                print(f"  创建临时目录: {temp_dir}")
+            # 创建临时目录用于sparse-checkout
+            temp_dir = docs_dir / f"temp_{name}_{int(datetime.now().timestamp())}"
+            print(f"  创建临时目录: {temp_dir}")
 
-                # 克隆到临时目录
-                print(f"  克隆仓库并启用sparse-checkout...")
+            # 克隆到临时目录
+            print(f"  克隆仓库并启用sparse-checkout...")
+            success, error = run_command([
+                "git", "clone",
+                "--depth", "1",
+                "--filter=blob:none",
+                "--sparse",
+                base_url,
+                str(temp_dir)
+            ])
+            if not success:
+                raise Exception(f"克隆失败: {error}")
+
+            # 设置sparse-checkout目录
+            if dir_path:
+                print(f"  设置sparse-checkout目录: {dir_path}")
                 success, error = run_command([
-                    "git", "clone",
-                    "--depth", "1",
-                    "--filter=blob:none",
-                    "--sparse",
-                    base_url,
-                    str(temp_dir)
-                ])
+                    "git", "sparse-checkout", "set", dir_path
+                ], cwd=temp_dir)
                 if not success:
-                    raise Exception(f"克隆失败: {error}")
+                    raise Exception(f"sparse-checkout设置失败: {error}")
 
-                # 设置sparse-checkout目录
-                if dir_path:
-                    print(f"  设置sparse-checkout目录: {dir_path}")
-                    success, error = run_command([
-                        "git", "sparse-checkout", "set", dir_path
-                    ], cwd=temp_dir)
-                    if not success:
-                        raise Exception(f"sparse-checkout设置失败: {error}")
+                # 移动最终目录到目标位置
+                source_dir = temp_dir / dir_path
+                print(f"  移动目录: {source_dir} -> {repo_dir}")
 
-                    # 移动最终目录到目标位置
-                    source_dir = temp_dir / dir_path
-                    print(f"  移动目录: {source_dir} -> {repo_dir}")
+                if source_dir.exists():
+                    import shutil
+                    shutil.move(str(source_dir), str(repo_dir))
+                    print(f"  ✓ 目录移动完成")
+                else:
+                    raise Exception(f"源目录不存在: {source_dir}")
 
-                    if source_dir.exists():
-                        import shutil
-                        shutil.move(str(source_dir), str(repo_dir))
-                        print(f"  ✓ 目录移动完成")
-                    else:
-                        raise Exception(f"源目录不存在: {source_dir}")
-
-                # 清理临时目录
-                print(f"  清理临时目录...")
-                import shutil
-                shutil.rmtree(temp_dir)
+            # 清理临时目录
+            print(f"  清理临时目录...")
+            import shutil
+            shutil.rmtree(temp_dir)
 
             # 验证下载结果 - 检查最终目录是否在docs目录下
             if dir_path:
