@@ -579,12 +579,5 @@ if hasattr(response, 'usage_metadata'):
 
 
 ```
-
-获取帮助
-----
-
-如果您在使用 Gemini 原生格式时遇到问题，可以：
-
-*   查看 [API 文档](https://docs.apiyi.com/api-reference) 了解详细的 API 规范
-*   参考 [模型列表](https://docs.apiyi.com/models) 查看可用的 Gemini 模型
-*   联系技术支持获取帮助
+## 注意
+VEO 系列模型，目前还不支持通过原生SDK调用。
