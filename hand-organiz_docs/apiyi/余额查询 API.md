@@ -1,212 +1,142 @@
-> 本文由 [简悦 SimpRead](http://ksria.com/simpread/) 转码， 原文地址 [docs.apiyi.com](https://docs.apiyi.com/api-capabilities/balance-query)
+# APIYI 账户余额查询 API
 
-> 获取账户余额、已使用额度和请求次数等信息，实现主动余额告警控制
+本文档描述了如何通过 APIYI 平台查询当前账户的余额、已用额度及相关用户信息。
 
-接口概述
-----
+## 1. 接口概述
 
-余额查询接口用于获取当前账户的额度使用情况，包括总配额、已使用额度、剩余额度和请求次数等信息。 这个接口可帮助客户以简单的方式获取账号余额，以便更主动、自由地控制余额告警。
+该接口用于获取当前认证用户的账户详情，核心数据包括：
+*   **剩余额度 (quota)**：当前账户剩余可用的点数。
+*   **已用额度 (used_quota)**：账户历史累计消耗的点数。
+*   **基本信息**：用户名、显示名称等。
 
-![](https://mintcdn.com/apiyillc/PXVoab-l7wSQlQVE/images/apiyi-system-accesstoken.png?fit=max&auto=format&n=PXVoab-l7wSQlQVE&q=85&s=eb4f48476a795dfa5bfd7cb053081bdc)
+## 2. 接口详情
 
-接口信息
-----
+| 项目 | 说明 |
+| :--- | :--- |
+| **接口 URL** | `https://api.apiyi.com/api/user/self` |
+| **请求方法** | `GET` |
+| **认证方式** | Header 认证 (Token) |
+| **响应格式** | JSON |
 
-<table><thead><tr><th>项目</th><th>说明</th></tr></thead><tbody><tr><td><strong>接口 URL</strong></td><td><code>https://api.apiyi.com/api/user/self</code></td></tr><tr><td><strong>请求方法</strong></td><td><code>GET</code></td></tr><tr><td><strong>认证方式</strong></td><td>Authorization Header</td></tr><tr><td><strong>响应格式</strong></td><td>JSON</td></tr></tbody></table>
+## 3. 请求说明
 
-请求说明
-----
+### 3.1 请求头 (Headers)
 
-<table><thead><tr><th>Header 名称</th><th>必填</th><th>说明</th></tr></thead><tbody><tr><td><code>Authorization</code></td><td>是</td><td>API 访问令牌，格式：直接填写 token 字符串</td></tr><tr><td><code>Accept</code></td><td>否</td><td>建议设置为 <code>application/json</code></td></tr><tr><td><code>Content-Type</code></td><td>否</td><td>建议设置为 <code>application/json</code></td></tr></tbody></table>
+| Header 名称 | 必填 | 示例值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `Authorization` | **是** | `sk-xxxxxx` | API 访问令牌 (Access Token)。**直接填写 Token 字符串**，无需 `Bearer` 前缀。 |
+| `Accept` | 否 | `application/json` | 建议设置 |
+| `Content-Type` | 否 | `application/json` | 建议设置 |
 
-### 请求参数
+### 3.2 请求参数
 
-响应说明
-----
+无查询参数或请求体。
 
-### 成功响应示例
+## 4. 响应说明
 
-```
+接口返回标准的 JSON 对象，包含状态码与数据载荷。
+
+### 4.1 成功响应示例
+
+```json
 {
   "success": true,
   "message": null,
   "data": {
-    "id": 19489,
-    "username": "testnano",
-    "display_name": "testnano",
+    "id": 12345,
+    "username": "demo_user",
+    "display_name": "Demo User",
     "role": 1,
     "status": 1,
-    "email": "",
-    "quota": 24997909,
-    "used_quota": 10027091,
-    "request_count": 339,
-    "group": "ceshi",
-    "aff_code": "ZM0H",
-    "inviter_id": 0,
-    "access_token": "...",
-    "ModelFixedPrice": [...]
+    "email": "demo@example.com",
+    "quota": 25000000,        // 剩余额度
+    "used_quota": 5000000,    // 已用额度
+    "request_count": 100,
+    "group": "default",
+    "access_token": "",       // 敏感信息通常为空或脱敏
+    "ModelFixedPrice": { ... } // 模型价格表
   }
 }
-
-
 ```
 
-### 核心响应字段说明
+### 4.2 核心字段解析
 
-<table><thead><tr><th>字段名</th><th>类型</th><th>说明</th></tr></thead><tbody><tr><td><code>success</code></td><td>Boolean</td><td>请求是否成功</td></tr><tr><td><code>message</code></td><td>String</td><td>错误信息（成功时为 null）</td></tr><tr><td><code>data.username</code></td><td>String</td><td>用户名</td></tr><tr><td><code>data.display_name</code></td><td>String</td><td>显示名称</td></tr><tr><td><code>data.quota</code></td><td>Integer</td><td><strong>剩余额度</strong>（当前可用余额，单位：额度）</td></tr><tr><td><code>data.used_quota</code></td><td>Integer</td><td><strong>已使用额度</strong>（单位：额度）</td></tr><tr><td><code>data.request_count</code></td><td>Integer</td><td><strong>总请求次数</strong></td></tr><tr><td><code>data.group</code></td><td>String</td><td>用户所属组</td></tr><tr><td><code>data.ModelFixedPrice</code></td><td>Array</td><td>模型价格列表（可忽略）</td></tr></tbody></table>
+| 字段路径 | 类型 | 含义 | 备注 |
+| :--- | :--- | :--- | :--- |
+| `success` | Boolean | 请求状态 | `true` 表示成功 |
+| `data.display_name` | String | 显示名称 | 优先展示，若无则使用 `username` |
+| `data.quota` | Number | **剩余额度** | 当前账户剩余可用的点数 (余额) |
+| `data.used_quota` | Number | **已用额度** | 历史累计消耗的点数 |
 
-### 额度换算说明
+## 5. 额度与金额换算
 
-**计算公式：**
+APIYI 使用“额度点数 (Credits)”作为计费单位，与美元 (USD) 的换算关系如下：
 
-*   美金金额 = 额度 ÷ 500,000
-*   剩余额度 = quota（quota 本身就是当前剩余余额）
-*   剩余美金 = quota ÷ 500,000
+**换算公式：**
+$$ 
+\text{金额 (USD)} = \frac{\text{额度 (Credits)}}{500,000} 
+$$ 
 
 **示例：**
+*   若 `quota` = 25,000,000
+    *   余额 = $25,000,000 / 500,000 = \$50.00$
+*   若 `used_quota` = 500,000
+    *   已用 = $500,000 / 500,000 = \$1.00$
 
-*   `quota: 24997909` → $49.99 USD（当前剩余余额）
-*   `used_quota: 10027091` → $20.05 USD（已使用）
+## 6. 代码示例 (TypeScript / Next.js)
 
-错误响应
-----
+```typescript
+// 这里的 env.APIYI_ACCESS_TOKEN 为你的 Token 环境变量
+async function fetchAccountBalance() {
+  const token = process.env.APIYI_ACCESS_TOKEN;
+  
+  if (!token) {
+    console.warn("API Token not configured");
+    return null;
+  }
 
-### HTTP 401 - 认证失败
+  try {
+    const response = await fetch("https://api.apiyi.com/api/user/self", {
+      method: "GET",
+      headers: {
+        "Accept": "application/json",
+        "Authorization": token, // 直接传入 Token
+        "Content-Type": "application/json",
+      },
+      cache: "no-store", // 确保获取最新数据
+    });
 
-```
-{
-  "success": false,
-  "message": "Unauthorized"
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const json = await response.json();
+    
+    if (!json.success || !json.data) {
+      throw new Error(json.message || "Invalid response format");
+    }
+
+    const { quota, used_quota, display_name } = json.data;
+
+    // 换算为美元
+    const remainingUsd = typeof quota === 'number' ? quota / 500000 : 0;
+    const usedUsd = typeof used_quota === 'number' ? used_quota / 500000 : 0;
+
+    return {
+      name: display_name,
+      balance: remainingUsd,
+      used: usedUsd
+    };
+
+  } catch (error) {
+    console.error("Failed to fetch balance:", error);
+    return null;
+  }
 }
-
-
 ```
 
-**原因：** Authorization 令牌无效或已过期 **解决方法：** 检查并更新 API 令牌
+## 7. 常见问题
 
-### HTTP 403 - 权限不足
-
-```
-{
-  "success": false,
-  "message": "Forbidden"
-}
-
-
-```
-
-**原因：** 当前令牌无权访问该接口 **解决方法：** 联系管理员确认权限配置
-
-代码示例
-----
-
-### cURL 示例
-
-```
-curl --compressed 'https://api.apiyi.com/api/user/self' \
-  -H 'Accept: application/json' \
-  -H 'Authorization: YOUR_TOKEN_HERE' \
-  -H 'Content-Type: application/json'
-
-
-```
-
-**快速测试（替换 YOUR_TOKEN_HERE）：**
-
-```
-export APIYI_TOKEN='YOUR_TOKEN_HERE'
-
-curl --compressed -s 'https://api.apiyi.com/api/user/self' \
-  -H 'Accept: application/json' \
-  -H "Authorization: $APIYI_TOKEN" \
-  -H 'Content-Type: application/json' | \
-  jq '.data | {quota, used_quota, request_count}'
-
-
-```
-
-### Python 示例（基础版）
-
-```
-import requests
-
-{/* 配置 */}
-url = "https://api.apiyi.com/api/user/self"
-authorization = "YOUR_TOKEN_HERE"  # 替换为你的令牌
-
-{/* 请求头 */}
-headers = {
-    'Accept': 'application/json',
-    'Authorization': authorization,
-    'Content-Type': 'application/json'
-}
-
-{/* 发送请求 */}
-response = requests.get(url, headers=headers, timeout=10)
-
-{/* 检查响应 */}
-if response.status_code == 200:
-    data = response.json()
-    user_data = data['data']
-
-    {/* 提取核心信息 */}
-    quota = user_data['quota']
-    used_quota = user_data['used_quota']
-    request_count = user_data['request_count']
-
-    {/* 计算美金金额 */}
-    {/* 注意：quota 就是当前剩余余额 */}
-    remaining_usd = quota / 500000
-    used_usd = used_quota / 500000
-
-    {/* 打印结果 */}
-    print(f"剩余额度：${remaining_usd:.2f} USD ({quota:,} 额度)")
-    print(f"已使用：${used_usd:.2f} USD ({used_quota:,} 额度)")
-    print(f"请求次数：{request_count:,} 次")
-else:
-    print(f"请求失败：HTTP {response.status_code}")
-    print(response.text)
-
-
-```
-
-### Python 示例（完整优化版）
-
-我们提供了完整的优化版脚本 `quota_optimized.py`，包含以下特性：
-
-**使用方法：**
-
-```
-{/* 方式1：使用环境变量（推荐） */}
-export APIYI_TOKEN='YOUR_TOKEN_HERE'
-python quota_optimized.py
-
-{/* 方式2：命令行参数 */}
-python quota_optimized.py 'YOUR_TOKEN_HERE'
-
-
-```
-
-**输出示例：**
-
-```
-============================================================
-📊 APIYI 账户余额信息
-============================================================
-用户名称：testnano (testnano)
-------------------------------------------------------------
-剩余额度：24,997,909 额度 ($49.99 USD)
-已使用：  10,027,091 额度 ($20.05 USD)
-请求次数：339 次
-============================================================
-💡 换算说明：500,000 额度 = $1.00 USD
-============================================================
-
-
-```
-
-常见问题
-----
-
-注意事项
-----
+*   **HTTP 401 Unauthorized**: Token 无效或过期。请检查 `.env` 配置。
+*   **余额显示为 0**: 请确认是否使用了正确的除数 (500,000) 以及是否正确处理了 `0` 值（避免被视为 `null`）。
+*   **Header 格式**: 该接口通常不需要 `Bearer` 前缀，直接发送 Token 字符串即可。如果失败，可尝试添加 `Bearer ` 前缀测试。
