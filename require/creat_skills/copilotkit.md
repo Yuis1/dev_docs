@@ -11,7 +11,7 @@ description: 根据目录下文件总结出技能描述
 
 如果需要，这里有文档转换脚本：utils/mdx_to_md_converter.py
 
-工作目录：skills/
-输出技能到目录：skills/output/copilotkit/
+工作目录：tmp/
+输出技能到目录：skills/copilotkit/
 
 构建完成后，不需要打包 .zip 文件

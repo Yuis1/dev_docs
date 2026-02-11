@@ -13,7 +13,7 @@ description: 根据目录下文件总结出技能描述
 
 MDX 文件 文件不多，为了简化复杂度，可以不用转换，直接使用
 
-工作目录：skills/
-输出技能到目录：skills/output/ten-framework/
+工作目录：tmp/
+输出技能到目录：skills/ten-framework/
 
 构建完成后，不需要打包 .zip 文件
