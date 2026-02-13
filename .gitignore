@@ -38,6 +38,12 @@ __pycache__/
 .env.local
 .env.*.local
 
+# Python virtual environments (uv/venv)
+.venv/
+venv/
+env/
+ENV/
+
 # Security
 *.pem
 *.key
