@@ -28,6 +28,7 @@ repositories:
     url: https://github.com/CopilotKit/CopilotKit/tree/main/docs/content/docs
     description: CopilotKit 文档
 
-
-
+  - name: New-API
+    url: https://github.com/QuantumNous/new-api-docs-v1/tree/main/content/docs/zh
+    description: New-API 中文文档
 
