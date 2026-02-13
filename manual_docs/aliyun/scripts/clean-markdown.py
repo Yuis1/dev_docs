@@ -9,9 +9,10 @@ Markdown 文档清理脚本
 """
 
 import re
+import argparse
 from pathlib import Path
 
-TARGET_DIR = Path("/home/yuis/dev/dev_docs/hand-organiz_docs/aliyun")
+DEFAULT_TARGET_DIR = Path(__file__).resolve().parent.parent
 
 def clean_markdown(content):
     """清理 Markdown 内容"""
@@ -122,10 +123,24 @@ def process_file(file_path):
 
 def main():
     """主函数"""
+    parser = argparse.ArgumentParser(description="清理 Markdown 文档格式")
+    parser.add_argument(
+        "--target-dir",
+        default=str(DEFAULT_TARGET_DIR),
+        help="要清理的目录（默认: aliyun 文档目录）"
+    )
+    args = parser.parse_args()
+
+    target_dir = Path(args.target_dir).expanduser().resolve()
+    if not target_dir.exists():
+        print(f"错误: 目录不存在: {target_dir}")
+        return
+
     print("开始清理 Markdown 文档...\n")
+    print(f"目标目录: {target_dir}\n")
 
     # 查找所有 .md 文件
-    md_files = list(TARGET_DIR.rglob("*.md"))
+    md_files = list(target_dir.rglob("*.md"))
     # 排除 scripts 目录
     md_files = [f for f in md_files if 'scripts' not in f.parts]
 
@@ -133,7 +148,7 @@ def main():
     modified = 0
 
     for file_path in sorted(md_files):
-        relative_path = file_path.relative_to(TARGET_DIR)
+        relative_path = file_path.relative_to(target_dir)
         if process_file(file_path):
             modified += 1
             print(f"✓ 已清理: {relative_path}")

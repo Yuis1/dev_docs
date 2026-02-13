@@ -10,7 +10,7 @@ from pathlib import Path
 
 def copy_dspy_docs():
     """复制 DSPY 文档到技能目录"""
-    base_dir = Path(__file__).parent.parent.parent.parent
+    base_dir = Path(__file__).resolve().parent.parent.parent
 
     source_dir = base_dir / "docs" / "dspy"
     target_dir = base_dir / "skills" / "output" / "dspy" / "references"

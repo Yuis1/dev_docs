@@ -380,7 +380,7 @@ class DSPYCompleteDocCopier:
 
 def main():
     """主函数"""
-    base_dir = Path(__file__).parent.parent.parent.parent
+    base_dir = Path(__file__).resolve().parent.parent.parent
 
     source_dir = base_dir / "docs" / "dspy" / "tutorials"
     target_dir = base_dir / "skills" / "output" / "dspy"
