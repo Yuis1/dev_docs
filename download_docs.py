@@ -136,14 +136,21 @@ def check_local_repo_status(repo_dir: Path) -> Dict:
     return status
 
 def main():
+    script_dir = Path(__file__).resolve().parent
+
     parser = argparse.ArgumentParser(description="Git Sparse Checkout 优化版本")
     parser.add_argument("--force", action="store_true", help="强制重新下载所有仓库")
     parser.add_argument("--check", action="store_true", help="仅检查状态，不执行下载")
     parser.add_argument("--repo", help="仅处理指定仓库")
+    parser.add_argument(
+        "--base-dir",
+        default=str(script_dir),
+        help="基础目录（默认: 脚本所在目录）"
+    )
     args = parser.parse_args()
 
     # 基础目录设置
-    base_dir = Path.home() / "dev/dev_docs"
+    base_dir = Path(args.base_dir).expanduser().resolve()
     base_dir.mkdir(parents=True, exist_ok=True)
 
     # 统一的docs目录
