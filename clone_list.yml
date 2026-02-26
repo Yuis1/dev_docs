@@ -20,10 +20,6 @@ repositories:
     url: https://github.com/langchain-ai/docs/tree/main/src/oss/deepagents
     description: Deep Agents 文档
 
-  - name: langsmith
-    url: https://github.com/langchain-ai/docs/tree/main/src/langsmith
-    description: langsmith 文档，包含 langsmith studio
-
   - name: copilotkit
     url: https://github.com/CopilotKit/CopilotKit/tree/main/docs/content/docs
     description: CopilotKit 文档
@@ -32,3 +28,6 @@ repositories:
     url: https://github.com/QuantumNous/new-api-docs-v1/tree/main/content/docs/zh
     description: New-API 中文文档
 
+  - name: OpenClaw
+    url: https://github.com/openclaw/openclaw/tree/main/docs
+    description: OpenClaw文档
